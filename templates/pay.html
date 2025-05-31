@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Razorpay Test</title>
+</head>
+<body>
+    <h2>Pay ₹100</h2>
+    <button id="rzp-button">Pay Now</button>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        document.getElementById('rzp-button').onclick = async function (e) {
+            const response = await fetch('/create_order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: 100 }) // Amount in rupees
+            });
+
+            const order = await response.json();
+
+            if (order.error) {
+                alert("Error creating order: " + order.error);
+                return;
+            }
+
+            var options = {
+                "key": "{{ razorpay_key }}",
+                "amount": order.amount,
+                "currency": "INR",
+                "name": "Test Corp",
+                "description": "Test Transaction",
+                "order_id": order.id,
+                "handler": function (response) {
+                    fetch('/verify_payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams(response)
+                    })
+                    .then(res => res.text())
+                    .then(alert)
+                    .catch(err => alert("Verification failed: " + err));
+                },
+                "theme": {
+                    "color": "#3399cc"
+                }
+            };
+
+            var rzp = new Razorpay(options);
+            rzp.open();
+            e.preventDefault();
+        }
+    </script>
+</body>
+</html>
